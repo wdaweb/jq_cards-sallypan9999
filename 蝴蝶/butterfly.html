@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Bonbon&display=swap" rel="stylesheet">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: url(./images/garden01.png) no-repeat center/cover;
+            position: fixed;
+        }
+
+        .container {
+            width: 1500px;
+            height: 960px;
+            position: relative;
+            top: 50px;
+            left: 200px;
+        }
+
+        .caterpillar {
+            width: 760px;
+            height: 960px;
+            position: absolute;
+            left: 300px;
+            bottom: -150px;
+        }
+
+        .col {
+            width: 900px;
+            height: 900px;
+            position: absolute;
+            right: -200px;
+            top: 30px;
+            text-align: center;
+            font-size: 30px;
+            color: rgb(97, 5, 5);
+        }
+
+        .mirror {
+            width: 760px;
+            height: 570px;
+        }
+
+        .butterfly {
+            width: 600px;
+            height: 600px;
+            position: absolute;
+            top: 150px;
+            right: 150px;
+            z-index: 1;
+        }
+
+        #btnStart {
+            font-size: 7rem;
+            font-weight: bold;
+            color: purple;
+            font-family: 'Bonbon', cursive;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            position: absolute;
+            right: 0;
+            bottom: 0;
+        }
+
+        #btnStart:hover {
+            font-size: 10rem;
+            color: rgb(250, 193, 6);
+        }
+
+        .card {
+            width: 250px;
+            height: 160px;
+            float: left;
+            position: relative;
+            /* 設定子元素在3D空間內 */
+            transform-style: preserve-3D;
+
+        }
+
+        .card-front {
+            width: 100%;
+            height: 100%;
+            background: url(./images/牌/1B.png) no-repeat center/cover;
+            position: absolute;
+            transform: rotateY(180deg);
+            /* 翻過來後隱藏另一面 */
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .card-back {
+            width: 100%;
+            height: 100%;
+            background: url(./images/牌/BG2.png) no-repeat center/cover;
+            position: absolute;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .card-open {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 遊戲初始畫面 -->
+    <div id="home" class="container">
+        <img class="caterpillar" src="./images/caterpillar2.png">
+        <div class="col">
+            <h1>猜猜我長大後會變成什麼樣子呢?</h1>
+            <img class="mirror" src="./images/mirror.png">
+            <img class="butterfly" src="./images/butterfiy.gif">
+            <button id="btnStart">Start</button>
+        </div>
+    </div>
+
+    <!-- 遊戲開始畫面 -->
+    <div id="game" class="container">
+        <!-- <div class="card">
+            <div class="card-front"></div>
+            <div class="card-back"></div>
+        </div> -->
+    </div>
+
+
+    <script src="./jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $('#game').hide()
+        $('#btnStart').on('click', function () {
+            $('#home').hide();
+            $('#game').show();
+        })
+
+        // 產生12張卡片
+        for (let i = 0; i < 24; i++) {
+            $('#game').append(`  
+            <div class="card">
+               <div class="card-front"></div>
+               <div class="card-back"></div>
+            </div>
+        `)
+        }
+
+        // 決定數字第一組
+        for (let j = 0; j < 12; j++) {
+            // 決定數字
+            const insect = j + 1
+            $('.card').eq(j).find('.card-front').css('background-image', `url(images/牌/${insect}B.png)`)
+            // data-?存取索引資料
+            $('.card').eq(j).attr('data-card', insect)
+
+            // 打散
+            const target = Math.round(Math.random() * 11)
+            $('.card').eq(target).insertAfter($('.card').eq(j))
+        }
+        // 第二組
+        for (let k = 12; k < 24; k++) {
+            // 決定數字
+            const butterfly = k % 12 + 1
+            $('.card').eq(k).find('.card-front').css('background-image', `url(images/牌/${butterfly}F.png)`)
+            // data-?存取索引資料
+            $('.card').eq(k).attr('data-card', butterfly)
+            // 打散
+            const target = Math.round(Math.random() * 11)
+            $('.card').eq(target).insertAfter($('.card').eq(k))
+        }
+
+        //翻牌
+        $('#game').on('click', '.card', function () {
+            // 最多只能翻兩張牌，且這張牌還沒翻開，才給翻開
+            if ($('.card-open').length < 2 && !$(this).hasClass('card-open')) {
+                $(this).addClass('card-open')
+            }
+            // 如果翻開兩張了
+            if ($('.card-open').length == 2) {
+                // 如果兩張數字一樣
+                let cardOpen0 = $('.card-open').eq(0).attr('data-card');
+                let cardOpen1 = $('.card-open').eq(1).attr('data-card');
+                if (cardOpen0 == cardOpen1) {
+                    // 使用card-ok 標記已完成
+                    $('.card-open').addClass('card-ok')
+                    // 將 card-front 淡出而不是 .card，因為對 .card 淡出會把3D壓平
+                    $('.card-open .card-front').fadeTo(1000, 0)
+                }
+
+                $('.card-open .card-front').on('fadeTo', function () {
+
+                })
+
+                // 不管一不一樣都翻回來
+                setTimeout(() => {
+                    // 如果 .card-open 裡的 card-front 透明度不是1，把 .card-open 透明度設為 0
+                    // .each() 類似 for of ，裡面的$(this) 代表迴圈正在跑的元素
+                    $('.card-open').each(function () {
+                        if ($(this).find('.card-front').css('opacity') != 1) {
+                            $(this).css('opacity', 0)
+                        }
+                    })
+
+                    $('.card-open').removeClass('card-open')
+                    if ($('.card-ok').length == 24) {
+                        Swal.fire({
+                            title: '恭喜過關'
+                        })
+
+                    }
+                }, 1000)
+
+            }
+        })
+
+    </script>
+</body>
+
+</html>
